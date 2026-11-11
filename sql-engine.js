@@ -79,7 +79,7 @@
     const m = expr.match(
       /^\s*\(?\s*["']?([\w\u4e00-\u9fa5.]+)["']?\s*(>=|<=|!=|<>|=|>|<|LIKE)\s*([\s\S]+?)\s*\)?\s*$/i
     );
-    if (!m) throw new Error('无法解析条件: ' + expr);
+    if (!m) throw new Error(window.i18n ? window.i18n.t('se_cond', { s: expr }) : '无法解析条件: ' + expr);
     const [, field, op, valuePart] = m;
     return { type: 'cond', field, op: op.toUpperCase(), value: parseValue(valuePart) };
   }
@@ -92,7 +92,7 @@
     const m = sql.match(
       /^SELECT\s+([\s\S]+?)\s+FROM\s+["']?([\w\u4e00-\u9fa5.]+)["']?([\s\S]*)$/i
     );
-    if (!m) throw new Error('语法错误：需要 SELECT ... FROM 表名');
+    if (!m) throw new Error(window.i18n ? window.i18n.t('se_syntax') : '语法错误：需要 SELECT ... FROM 表名');
     const [, selectPart, tableName, rest] = m;
 
     // SELECT 字段
@@ -104,7 +104,7 @@
         const mm = s.match(
           /^["']?([\w\u4e00-\u9fa5.]+)["']?(?:\s+AS\s+["']?([\w\u4e00-\u9fa5]+)["']?)?$/i
         );
-        if (!mm) throw new Error('无法解析字段: ' + s);
+        if (!mm) throw new Error(window.i18n ? window.i18n.t('se_field', { s }) : '无法解析字段: ' + s);
         return { type: 'field', name: mm[1], alias: mm[2] || mm[1] };
       })
       .filter(Boolean);
@@ -132,7 +132,7 @@
     if (orderByPart) {
       orderBy = orderByPart.split(',').map(s => {
         const mm = s.trim().match(/^["']?(\w+)["']?(\s+(ASC|DESC))?$/i);
-        if (!mm) throw new Error('无法解析 ORDER BY: ' + s);
+        if (!mm) throw new Error(window.i18n ? window.i18n.t('se_order', { s }) : '无法解析 ORDER BY: ' + s);
         return { field: mm[1], desc: (mm[3] || 'ASC').toUpperCase() === 'DESC' };
       });
     }

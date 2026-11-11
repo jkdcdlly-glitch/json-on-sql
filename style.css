@@ -376,8 +376,12 @@ html, body {
 }
 #tree-panel .load-more:hover { background: #dbeafe; }
 
-body:not(.show-cn) .cn-label,
-body:not(.show-cn) .cn-sub { display: none !important; }
+body:not(.lang-zh) .cn-label,
+body:not(.lang-zh) .cn-sub { display: none !important; }
+
+/* AI 字段翻译（中文词典功能）仅在中文界面下展示 */
+body:not(.lang-zh) #aiTransBtn,
+body:not(.lang-zh) #aiConfigBtn { display: none !important; }
 
 #content-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 

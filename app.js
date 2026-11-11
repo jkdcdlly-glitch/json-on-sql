@@ -3,10 +3,15 @@
 (function() {
   'use strict';
 
+  if (!window.i18n) return;
   if (typeof window.translateField !== 'function') return;
   if (!window.SQLEngine) return;
   const translateField = window.translateField;
   const SQLEngine = window.SQLEngine;
+  const tr = window.i18n.t;
+  const getLang = window.i18n.getLang;
+  // 仅在中文界面下提供字段中文标注
+  function cnOf(name) { return getLang() === 'zh' ? translateField(name) : ''; }
 
   // ========== 状态 ==========
   let currentData = null;
@@ -28,10 +33,10 @@
   }
   function shortPreview(v) {
     const t = typeOf(v);
-    if (t === 'array') return v.length === 0 ? '[]' : `[${v.length} 项]`;
+    if (t === 'array') return v.length === 0 ? '[]' : tr('preview_items', { n: v.length });
     if (t === 'object') {
       const n = Object.keys(v).length;
-      return n === 0 ? '{}' : `{${n} 个键}`;
+      return n === 0 ? '{}' : tr('preview_keys', { n });
     }
     if (t === 'string') {
       const s = v.length > 24 ? v.slice(0, 24) + '…' : v;
@@ -62,7 +67,7 @@
       : t === 'boolean' ? 'T/F' : '∅';
   }
   function makeCNLabel(fieldName, className) {
-    const cn = translateField(fieldName);
+    const cn = cnOf(fieldName);
     if (!cn) return null;
     const span = document.createElement('span');
     span.className = className;
@@ -107,12 +112,12 @@
       if (rest[0] === '.') {
         rest = rest.slice(1);
         const m = rest.match(/^([^.\[]+)/);
-        if (!m) throw new Error('路径格式错误：' + rest);
+        if (!m) throw new Error(tr('err_path_fmt', { s: rest }));
         path.push(m[1]);
         rest = rest.slice(m[1].length);
       } else if (rest[0] === '[') {
         const close = rest.indexOf(']');
-        if (close < 0) throw new Error('未闭合的 [');
+        if (close < 0) throw new Error(tr('err_bracket'));
         const inner = rest.slice(1, close).trim();
         rest = rest.slice(close + 1);
         if ((inner[0] === "'" && inner[inner.length - 1] === "'") ||
@@ -120,12 +125,12 @@
           path.push(inner.slice(1, -1));
         } else {
           const n = Number(inner);
-          if (!Number.isInteger(n) || n < 0) throw new Error('无效索引: ' + inner);
+          if (!Number.isInteger(n) || n < 0) throw new Error(tr('err_index', { s: inner }));
           path.push(n);
         }
       } else {
         const m = rest.match(/^([^.\[]+)/);
-        if (!m) throw new Error('路径格式错误：' + rest);
+        if (!m) throw new Error(tr('err_path_fmt', { s: rest }));
         path.push(m[1]);
         rest = rest.slice(m[1].length);
       }
@@ -256,7 +261,7 @@
       if (end < data.length) {
         const more = document.createElement('div');
         more.className = 'node-row load-more';
-        more.textContent = `▼ 加载更多（还有 ${data.length - end} 项，每次 ${CHUNK_SIZE}）`;
+        more.textContent = tr('load_more', { n: data.length - end, c: CHUNK_SIZE });
         more.addEventListener('click', (e) => {
           e.stopPropagation();
           renderNextChunk();
@@ -267,7 +272,7 @@
         const endTag = document.createElement('div');
         endTag.className = 'node-row';
         endTag.style.cssText = 'color:#94a3b8;font-style:italic;cursor:default;font-size:11px;';
-        endTag.textContent = `（已全部展示 ${data.length} 项）`;
+        endTag.textContent = tr('all_shown', { n: data.length });
         children.appendChild(endTag);
         row._endEl = endTag;
       }
@@ -327,7 +332,7 @@
     const rootSpan = document.createElement('span');
     rootSpan.className = 'path-seg clickable';
     rootSpan.textContent = '$';
-    rootSpan.title = '跳到根节点';
+    rootSpan.title = tr('jump_root');
     rootSpan.addEventListener('click', () => navigateTo([]));
     bc.appendChild(rootSpan);
 
@@ -336,20 +341,20 @@
       const sep = document.createElement('span');
       sep.className = 'path-sep clickable';
       sep.textContent = typeof p === 'number' ? `[${p}]` : `.${p}`;
-      sep.title = '跳到 ' + pathToString(segPath);
+      sep.title = tr('jump_to', { p: pathToString(segPath) });
       sep.addEventListener('click', () => navigateTo(segPath));
       bc.appendChild(sep);
     });
 
     const copyBtn = document.createElement('button');
     copyBtn.className = 'copy-path-btn';
-    copyBtn.textContent = '📋 复制路径';
-    copyBtn.title = '复制当前完整路径';
+    copyBtn.textContent = tr('copy_path');
+    copyBtn.title = tr('copy_path_title');
     copyBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       copyToClipboard(pathToString(path)).then(() => {
-        copyBtn.textContent = '✓ 已复制';
-        setTimeout(() => { copyBtn.textContent = '📋 复制路径'; }, 1500);
+        copyBtn.textContent = tr('copied');
+        setTimeout(() => { copyBtn.textContent = tr('copy_path'); }, 1500);
       });
     });
     bc.appendChild(copyBtn);
@@ -379,7 +384,7 @@
   function renderObject(container, obj, path) {
     const keys = Object.keys(obj);
     if (keys.length === 0) {
-      container.innerHTML = '<div style="color:#94a3b8;padding:20px 0">空对象 {}</div>';
+      container.innerHTML = '<div style="color:#94a3b8;padding:20px 0">' + tr('empty_obj') + '</div>';
       return;
     }
     const table = document.createElement('table');
@@ -411,7 +416,7 @@
 
   function renderArray(container, arr, path) {
     if (arr.length === 0) {
-      container.innerHTML = '<div style="color:#94a3b8;padding:20px 0">空数组 []</div>';
+      container.innerHTML = '<div style="color:#94a3b8;padding:20px 0">' + tr('empty_arr') + '</div>';
       return;
     }
     const allObjects = arr.every(v => typeOf(v) === 'object');
@@ -460,20 +465,20 @@
     // === 新增：导出与复制按钮 ===
     const copyBtn = document.createElement('button');
     copyBtn.className = 'toolbar-btn';
-    copyBtn.textContent = '📋 复制(TSV)';
-    copyBtn.title = '复制表格数据为 TSV 格式（可直接粘贴到 Excel）';
+    copyBtn.textContent = tr('copy_tsv');
+    copyBtn.title = tr('copy_tsv_title');
     copyBtn.addEventListener('click', () => {
       const rows = arr.map(obj => currentKeys.map(k => obj[k]));
       doExport(currentKeys, rows, 'copy');
-      copyBtn.textContent = '✓ 已复制';
-      setTimeout(() => { copyBtn.textContent = '📋 复制(TSV)'; }, 1500);
+      copyBtn.textContent = tr('copied');
+      setTimeout(() => { copyBtn.textContent = tr('copy_tsv'); }, 1500);
     });
     tools.appendChild(copyBtn);
 
     const dlCsvBtn = document.createElement('button');
     dlCsvBtn.className = 'toolbar-btn';
     dlCsvBtn.textContent = '⬇️ CSV';
-    dlCsvBtn.title = '下载为 CSV 文件（包含所有记录及当前选择的列）';
+    dlCsvBtn.title = tr('dl_csv_title');
     dlCsvBtn.addEventListener('click', () => {
       const rows = arr.map(obj => currentKeys.map(k => obj[k]));
       doExport(currentKeys, rows, 'csv', 'data');
@@ -483,7 +488,7 @@
     const dlTsvBtn = document.createElement('button');
     dlTsvBtn.className = 'toolbar-btn';
     dlTsvBtn.textContent = '⬇️ TSV';
-    dlTsvBtn.title = '下载为 TSV 文件（包含所有记录及当前选择的列）';
+    dlTsvBtn.title = tr('dl_tsv_title');
     dlTsvBtn.addEventListener('click', () => {
       const rows = arr.map(obj => currentKeys.map(k => obj[k]));
       doExport(currentKeys, rows, 'tsv', 'data');
@@ -494,11 +499,11 @@
     const pagination = document.createElement('div');
     pagination.className = 'pagination';
     const prevBtn = document.createElement('button');
-    prevBtn.textContent = '‹ 上一页';
+    prevBtn.textContent = tr('prev_page');
     const pageInfo = document.createElement('span');
     pageInfo.className = 'page-info';
     const nextBtn = document.createElement('button');
-    nextBtn.textContent = '下一页 ›';
+    nextBtn.textContent = tr('next_page');
     pagination.appendChild(prevBtn);
     pagination.appendChild(pageInfo);
     pagination.appendChild(nextBtn);
@@ -523,9 +528,9 @@
         return b;
       };
 
-      topBar.appendChild(mkBtn('全选', () => { pendingSelection = new Set(allKeys); renderCheckboxes(); }));
-      topBar.appendChild(mkBtn('全不选', () => { pendingSelection = new Set(); renderCheckboxes(); }));
-      topBar.appendChild(mkBtn('恢复默认', () => { pendingSelection = new Set(allKeys); renderCheckboxes(); }));
+      topBar.appendChild(mkBtn(tr('sel_all'), () => { pendingSelection = new Set(allKeys); renderCheckboxes(); }));
+      topBar.appendChild(mkBtn(tr('sel_none'), () => { pendingSelection = new Set(); renderCheckboxes(); }));
+      topBar.appendChild(mkBtn(tr('sel_reset'), () => { pendingSelection = new Set(allKeys); renderCheckboxes(); }));
 
       const countSpan = document.createElement('span');
       countSpan.className = 'panel-count';
@@ -547,28 +552,28 @@
           cb.addEventListener('change', () => {
             if (cb.checked) pendingSelection.add(k);
             else pendingSelection.delete(k);
-            countSpan.textContent = `已选 ${pendingSelection.size} / ${allKeys.length}`;
+            countSpan.textContent = tr('sel_count', { n: pendingSelection.size, m: allKeys.length });
           });
           label.appendChild(cb);
           const text = document.createElement('span');
-          const cn = translateField(k);
+          const cn = cnOf(k);
           text.textContent = cn ? `${k} (${cn})` : k;
           label.appendChild(text);
           checkboxes.appendChild(label);
         });
-        countSpan.textContent = `已选 ${pendingSelection.size} / ${allKeys.length}`;
+        countSpan.textContent = tr('sel_count', { n: pendingSelection.size, m: allKeys.length });
       }
       renderCheckboxes();
 
       const actions = document.createElement('div');
       actions.className = 'panel-actions';
-      actions.appendChild(mkBtn('取消', () => {
+      actions.appendChild(mkBtn(tr('cancel'), () => {
         selectorOpen = false;
         colBtn.classList.remove('active');
         panel.classList.add('hidden');
       }));
-      const applyBtn = mkBtn('应用', () => {
-        if (pendingSelection.size === 0) { alert('请至少选择一个字段'); return; }
+      const applyBtn = mkBtn(tr('apply'), () => {
+        if (pendingSelection.size === 0) { alert(tr('need_one_field')); return; }
         if (pendingSelection.size === allKeys.length) columnSelection.delete(pathStr);
         else columnSelection.set(pathStr, new Set(pendingSelection));
         currentKeys = getSelectedColumns(pathStr, allKeys);
@@ -587,8 +592,8 @@
     container.appendChild(wrapper);
 
     function refreshAll() {
-      info.textContent = `共 ${arr.length} 条记录，显示 ${currentKeys.length} / ${allKeys.length} 个字段（点击单元格定位左侧树）`;
-      colBtn.textContent = `⚙️ 列 (${currentKeys.length}/${allKeys.length})`;
+      info.textContent = tr('table_info', { total: arr.length, cols: currentKeys.length, all: allKeys.length });
+      colBtn.textContent = tr('columns_btn', { a: currentKeys.length, b: allKeys.length });
       updateSqlEditor(path, 'record-array', currentKeys);
       renderTableContent();
     }
@@ -610,7 +615,7 @@
         const enDiv = document.createElement('div');
         enDiv.textContent = k;
         th.appendChild(enDiv);
-        const cn = translateField(k);
+        const cn = cnOf(k);
         if (cn) {
           const cnDiv = document.createElement('div');
           cnDiv.className = 'cn-sub';
@@ -647,14 +652,14 @@
               span.className = 'cell-clickable';
               span.textContent = shortPreview(v);
               td.appendChild(span);
-              td.title = '点击在左侧树定位到此节点';
+              td.title = tr('locate_tip');
               td.addEventListener('click', () => navigateTo(path.concat(i, k), { keepContent: true }));
             } else if (vt === 'null') {
               td.textContent = 'null';
               td.className = 'null-val';
             } else {
               td.textContent = vt === 'string' ? v : JSON.stringify(v);
-              td.title = (vt === 'string' ? v + '\n' : '') + '点击在左侧树定位到此节点';
+              td.title = (vt === 'string' ? v + '\n' : '') + tr('locate_tip');
               td.addEventListener('click', () => navigateTo(path.concat(i, k), { keepContent: true }));
             }
           }
@@ -666,7 +671,7 @@
       table.appendChild(tbody);
       wrapper.appendChild(table);
 
-      pageInfo.textContent = `第 ${page + 1} / ${totalPages} 页`;
+      pageInfo.textContent = tr('page_info', { p: page + 1, t: totalPages });
       prevBtn.disabled = page === 0;
       nextBtn.disabled = page >= totalPages - 1;
     }
@@ -691,7 +696,7 @@
     const thead = document.createElement('thead');
     const hr = document.createElement('tr');
     const th1 = document.createElement('th'); th1.textContent = '#'; th1.style.width = '80px';
-    const th2 = document.createElement('th'); th2.textContent = '值（点击可定位到左侧树）';
+    const th2 = document.createElement('th'); th2.textContent = tr('value_col');
     hr.appendChild(th1); hr.appendChild(th2);
     thead.appendChild(hr);
     table.appendChild(thead);
@@ -709,7 +714,7 @@
         span.className = 'cell-clickable';
         span.textContent = shortPreview(v);
         td2.appendChild(span);
-        td2.title = '点击在左侧树定位到此节点';
+        td2.title = tr('locate_tip');
         td2.addEventListener('click', () => navigateTo(path.concat(i), { keepContent: true }));
       } else if (vt === 'null') {
         td2.textContent = 'null';
@@ -717,7 +722,7 @@
         td2.style.cursor = 'default';
       } else {
         td2.textContent = vt === 'string' ? v : JSON.stringify(v);
-        td2.title = '点击在左侧树定位到此节点';
+        td2.title = tr('locate_tip');
         td2.addEventListener('click', () => navigateTo(path.concat(i), { keepContent: true }));
       }
       tr.appendChild(td1);
@@ -795,35 +800,32 @@
       tableName = last !== null ? String(last) : 'root';
     }
 
-    const cn = translateField(tableName);
+    const cn = cnOf(tableName);
     const tableComment = cn ? `  -- ${cn}` : '';
 
     if (mode === 'record-array' && visibleColumns && visibleColumns.length > 0) {
       const cols = visibleColumns.join(', ');
       ta.value =
-        `-- 表: ${tableName}（当前显示 ${visibleColumns.length} 个字段）\n` +
-        `-- 修改后按 Ctrl+Enter 或点「▶ 运行」执行\n\n` +
+        tr('sql_tbl_comment', { t: tableName, n: visibleColumns.length }) +
+        tr('sql_run_hint', {}) +
         `SELECT ${cols}\n` +
         `FROM ${tableName}\n` +
         `LIMIT 100;`;
     } else if (mode === 'value-array') {
       ta.value =
-        `-- 当前是值数组（${tableName}）${tableComment}\n` +
-        `-- 值数组不能直接 SQL 查询，请先选中上级的对象数组\n\n` +
+        tr('sql_value_array', { t: tableName, c: tableComment }) +
         `SELECT *\n` +
         `FROM ${tableName}\n` +
         `LIMIT 100;`;
     } else if (mode === 'object' && isSingleRecord) {
       ta.value =
-        `-- 当前选中：${pathToString(path)} (第 ${recordIndex + 1} 条记录)\n` +
-        `-- 自动定位到父表 ${tableName}\n\n` +
+        tr('sql_single', { p: pathToString(path), n: recordIndex + 1, t: tableName }) +
         `SELECT *\n` +
         `FROM ${tableName}\n` +
         `LIMIT 1 OFFSET ${recordIndex};`;
     } else {
       ta.value =
-        `-- 当前路径: ${pathToString(path)}\n` +
-        `-- 表名推测: "${tableName}"${tableComment}\n\n` +
+        tr('sql_generic', { p: pathToString(path), t: tableName, c: tableComment }) +
         `SELECT *\n` +
         `FROM ${tableName}\n` +
         `LIMIT 100;`;
@@ -832,12 +834,7 @@
 
   function fillSqlExample() {
     const ta = document.getElementById('sqlTextarea');
-    ta.value =
-      `-- 示例：查看 result 表最近的 20 条记录的关键字段\n` +
-      `SELECT date, organicTraffic, organicTrafficCost, traffic, trafficCost\n` +
-      `FROM result\n` +
-      `ORDER BY date DESC\n` +
-      `LIMIT 20;`;
+    ta.value = tr('sql_example');
   }
 
   function resolveTableSource(tableName) {
@@ -853,7 +850,7 @@
   function runSQL() {
     const ta = document.getElementById('sqlTextarea');
     const sql = ta.value;
-    if (!sql.trim()) { alert('请输入 SQL'); return; }
+    if (!sql.trim()) { alert(tr('sql_empty')); return; }
 
     let result;
     try {
@@ -861,18 +858,18 @@
       const source = resolveTableSource(parsed.tableName);
       if (!source) {
         const avail = SQLEngine.listArrayNames(currentData);
-        throw new Error(
-          '找不到表 "' + parsed.tableName + '"\n\n可用表名：\n  ' +
-          (avail.length ? avail.join('\n  ') : '（无）')
-        );
+        throw new Error(tr('sql_no_table', {
+          t: parsed.tableName,
+          list: avail.length ? avail.join('\n  ') : tr('no_tables')
+        }));
       }
       if (!Array.isArray(source.data)) {
-        throw new Error('"' + parsed.tableName + '" 不是数组');
+        throw new Error(tr('sql_not_array', { t: parsed.tableName }));
       }
       result = SQLEngine.executeSQL(sql, source.data);
       result.tablePath = source.path;
     } catch (err) {
-      alert('SQL 错误：\n' + err.message);
+      alert(tr('sql_error', { m: err.message }));
       return;
     }
     renderSQLResult(result, sql);
@@ -893,18 +890,18 @@
     bc.className = 'breadcrumb';
     const iconSpan = document.createElement('span');
     iconSpan.className = 'path-seg';
-    iconSpan.textContent = '🔍 SQL 查询结果';
+    iconSpan.textContent = tr('sql_result_label');
     bc.appendChild(iconSpan);
 
     const meta = document.createElement('span');
     meta.className = 'path-sep';
     meta.style.cssText = 'margin-left:8px;color:#64748b;';
-    meta.textContent = `${result.rows.length} 行 / 匹配 ${result.totalMatched} 条（表 ${result.tableName}）`;
+    meta.textContent = tr('sql_meta', { r: result.rows.length, m: result.totalMatched, t: result.tableName });
     bc.appendChild(meta);
 
     const closeBtn = document.createElement('button');
     closeBtn.className = 'copy-path-btn';
-    closeBtn.textContent = '✕ 关闭';
+    closeBtn.textContent = tr('close');
     closeBtn.addEventListener('click', closeSQLResult);
     bc.appendChild(closeBtn);
     viewPanel.appendChild(bc);
@@ -926,11 +923,11 @@
 
     const resCopyBtn = document.createElement('button');
     resCopyBtn.className = 'toolbar-btn';
-    resCopyBtn.textContent = '📋 复制(TSV)';
+    resCopyBtn.textContent = tr('copy_tsv');
     resCopyBtn.addEventListener('click', () => {
       doExport(colNames, result.rows, 'copy');
-      resCopyBtn.textContent = '✓ 已复制';
-      setTimeout(() => { resCopyBtn.textContent = '📋 复制(TSV)'; }, 1500);
+      resCopyBtn.textContent = tr('copied');
+      setTimeout(() => { resCopyBtn.textContent = tr('copy_tsv'); }, 1500);
     });
     resTools.appendChild(resCopyBtn);
 
@@ -957,7 +954,7 @@
     if (result.rows.length === 0) {
       const empty = document.createElement('div');
       empty.style.cssText = 'color:#94a3b8;padding:20px 0;text-align:center;';
-      empty.textContent = '查询结果为空（0 行）';
+      empty.textContent = tr('sql_no_rows');
       body.appendChild(empty);
       return;
     }
@@ -977,7 +974,7 @@
       const enDiv = document.createElement('div');
       enDiv.textContent = c.alias;
       th.appendChild(enDiv);
-      const cn = translateField(c.name);
+      const cn = cnOf(c.name);
       if (cn) {
         const cnDiv = document.createElement('div');
         cnDiv.className = 'cn-sub';
@@ -1089,15 +1086,15 @@
     panel.innerHTML = '';
     const status = document.createElement('div');
     status.className = 'search-status';
-    if (result.results.length === 0) status.textContent = '没有匹配项';
-    else if (result.truncated) status.innerHTML = `匹配 <span class="count">${result.total}+</span> 项，显示前 <span class="count">${result.results.length}</span> 项 <span class="warn">（已截断）</span>`;
-    else status.innerHTML = `匹配 <span class="count">${result.total}</span> 项`;
+    if (result.results.length === 0) status.textContent = tr('search_none');
+    else if (result.truncated) status.innerHTML = tr('search_trunc', { total: result.total, n: result.results.length });
+    else status.innerHTML = tr('search_total', { total: result.total });
     panel.appendChild(status);
 
     if (result.results.length === 0) {
       const noRes = document.createElement('div');
       noRes.className = 'no-result';
-      noRes.textContent = `未找到包含「${query}」的字段名或值`;
+      noRes.textContent = tr('search_nf', { q: query });
       panel.appendChild(noRes);
       return;
     }
@@ -1115,11 +1112,11 @@
       valueDiv.className = 'value-line';
       const tag = document.createElement('span');
       tag.className = 'kind-tag ' + item.kind;
-      tag.textContent = item.kind === 'key' ? '字段' : '值';
+      tag.textContent = item.kind === 'key' ? tr('tag_key') : tr('tag_value');
       valueDiv.appendChild(tag);
 
       if (item.kind === 'key') {
-        valueDiv.appendChild(document.createTextNode('字段名 = ' + item.key));
+        valueDiv.appendChild(document.createTextNode(tr('key_is') + item.key));
       } else {
         const span = document.createElement('span');
         const txt = item.displayValue.length > 120 ? item.displayValue.slice(0, 120) + '…' : item.displayValue;
@@ -1134,8 +1131,8 @@
         if (parentData !== null && typeof parentData === 'object') {
           const btn = document.createElement('button');
           btn.className = 'parent-btn';
-          btn.textContent = '📄 查看所在记录';
-          btn.title = '跳转并查看这个值所属的完整记录：' + pathToString(parentPath);
+          btn.textContent = tr('view_record');
+          btn.title = tr('view_record_title', { p: pathToString(parentPath) });
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
             document.getElementById('searchInput').value = '';
@@ -1207,9 +1204,9 @@
   }
 
   async function handleJSONText(text) {
-    if (!text || !text.trim()) { alert('内容为空'); return; }
+    if (!text || !text.trim()) { alert(tr('alert_empty')); return; }
     if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-    showLoader('正在解析 JSON...');
+    showLoader(tr('parsing'));
     await new Promise(r => setTimeout(r, 16));
     try {
       const data = JSON.parse(text);
@@ -1217,7 +1214,7 @@
       initTree(data);
       showMain();
     } catch (err) {
-      alert('JSON 解析失败：\n' + err.message);
+      alert(tr('alert_parse_fail', { m: err.message }));
     } finally {
       hideLoader();
     }
@@ -1226,13 +1223,13 @@
   async function handleFile(file) {
     if (!file) return;
     try {
-      showLoader('正在读取文件...');
+      showLoader(tr('reading'));
       await new Promise(r => setTimeout(r, 16));
       const text = await file.text();
       await handleJSONText(text);
     } catch (err) {
       hideLoader();
-      alert('读取文件失败：\n' + err.message);
+      alert(tr('alert_read_fail', { m: err.message }));
     }
   }
 
@@ -1303,9 +1300,9 @@
     // 应用修改
     async function applyJsonEdit() {
       const text = editJsonTextarea.value.trim();
-      if (!text) return alert('内容不能为空');
+      if (!text) return alert(tr('edit_empty'));
 
-      editJsonApplyBtn.textContent = '解析中...';
+      editJsonApplyBtn.textContent = tr('parsing_short');
       editJsonApplyBtn.disabled = true;
 
       try {
@@ -1319,9 +1316,9 @@
         // 确保主界面显示
         showMain();
       } catch (err) {
-        alert('JSON 格式错误，请检查语法：\n' + err.message);
+        alert(tr('alert_syntax', { m: err.message }));
       } finally {
-        editJsonApplyBtn.textContent = '应用并重新解析 (Ctrl+Enter)';
+        editJsonApplyBtn.textContent = tr('m_apply');
         editJsonApplyBtn.disabled = false;
       }
     }
@@ -1336,9 +1333,10 @@
       }
     });
 
-    document.getElementById('toggleCNBtn').addEventListener('click', function() {
-      document.body.classList.toggle('show-cn');
-      this.classList.toggle('active', document.body.classList.contains('show-cn'));
+    document.getElementById('toggleCNBtn').addEventListener('click', () => {
+      window.i18n.toggle();
+      // 重建树与右侧视图，刷新所有动态文案与中文标注
+      if (currentData) initTree(currentData);
     });
 
     document.getElementById('runSqlBtn').addEventListener('click', runSQL);
@@ -1373,12 +1371,12 @@
       try {
         path = parsePath(raw);
       } catch (err) {
-        alert('路径解析失败：\n' + err.message + '\n\n支持格式：\n  $.result[728]\n  result[728]\n  728\n  $["result"][728]["date"]');
+        alert(tr('err_path', { m: err.message }));
         return;
       }
       const data = resolvePath(currentData, path);
       if (data === undefined) {
-        if (!confirm('路径未找到：' + pathToString(path) + '\n\n是否跳到最接近的父节点？')) return;
+        if (!confirm(tr('path_nf', { p: pathToString(path) }))) return;
         for (let i = path.length - 1; i >= 0; i--) {
           const p = resolvePath(currentData, path.slice(0, i));
           if (p !== undefined) { navigateTo(path.slice(0, i)); return; }
