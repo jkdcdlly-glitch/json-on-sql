@@ -61,6 +61,11 @@
       g6_p1: 'Facing thousands of rows? Preview just the first few. <code>OFFSET</code> lets you emulate pagination.',
       g6_pre: "-- first 10 rows only\nSELECT * FROM data LIMIT 10;\n\n-- skip 20, take the next 10 (page 3)\nSELECT * FROM data LIMIT 10 OFFSET 20;",
 
+      g7_h3: '1.7 Nested fields: dot notation',
+      g7_p1: 'Real-world JSON often nests values inside objects — e.g. every record carries a <code>tool</code> object holding <code>id</code>, <code>title</code> and <code>code</code>. No manual flattening needed: use dot notation (<code>tool.id</code>) anywhere a field name is accepted — SELECT, WHERE and ORDER BY.',
+      g7_p2: 'With <code>SELECT *</code>, nested object fields are automatically flattened into sub-columns (<code>tool.id</code>, <code>tool.title</code>…), so you never see an unreadable <code>{3 keys}</code> cell.',
+      g7_pre: "-- nested object: { \"tool\": { \"id\": \"19\", \"title\": \"Overview\", \"code\": \"keyword-overview\" } }\n\n-- pick nested fields with dot notation\nSELECT type, tool.id, tool.title FROM data;\n\n-- filter on a nested field\nSELECT * FROM data WHERE tool.code = 'keyword-overview';",
+
       h2c: '2. Exporting JSON to Excel or CSV',
       h2c_p: 'Deeply nested JSON is painful to read. Flattening it into a table is the most direct way to analyze it. This tool ships a complete "JSON to Excel" pipeline:',
 
@@ -94,11 +99,13 @@
       faq1_q: 'My JSON file is tens of MB. Can this tool open it? Will it freeze?',
       faq1_a: 'No freeze. Naive formatters try to render every DOM node at once and crash the browser with memory exhaustion. This tool renders only the nodes currently in view or expanded, so even huge files open smoothly.',
       faq2_q: 'Does the SQL engine support JOIN or GROUP BY aggregates?',
-      faq2_a: 'Not yet. To keep the engine lightning-fast and purely client-side, it focuses on core single-table queries (SELECT, WHERE, ORDER BY, LIMIT). Multi-table JOIN and SUM/COUNT aggregates are not supported yet — export the query result and aggregate in Excel.',
+      faq2_a: 'Not yet. To keep the engine lightning-fast and purely client-side, it focuses on core single-table queries (SELECT — including nested fields via dot notation, WHERE, ORDER BY, LIMIT). Multi-table JOIN and SUM/COUNT aggregates are not supported yet — export the query result and aggregate in Excel.',
       faq3_q: 'My JSON contains company secrets or user privacy. Is it safe?',
       faq3_a: 'Absolutely safe. This tool runs purely in the browser with no backend server. All parsing, querying and exporting happen locally in your own browser (JavaScript engine). You can open the DevTools network panel or even disconnect from the internet and keep using it — no data is ever sent anywhere.',
       faq4_q: 'My JSON has a syntax error and refuses to parse. What now?',
       faq4_a: 'On import, the tool reports the exact location of the syntax error (line, column, missing comma, etc.). If data is already loaded, click "📝 Edit JSON" on the left, fix the text in the dialog, and hit apply to re-parse.',
+      faq5_q: 'My fields are nested objects (e.g. tool.id). Can I query deep values?',
+      faq5_a: "Yes. Dot notation works in SELECT, WHERE and ORDER BY — e.g. SELECT tool.id, tool.title FROM data WHERE tool.code = 'keyword-overview'. With SELECT *, object fields are automatically flattened into sub-columns, so nested data shows up as readable columns instead of {N keys}.",
 
       footer_text: 'JSON on SQL © 2024 — driven by the open-source community | 100% client-side',
 
@@ -256,6 +263,11 @@
       g6_p1: '面对上万条数据，你可以只取前几条进行预览。<code>OFFSET</code> 可以用于实现类似分页的效果。',
       g6_pre: "-- 只看前 10 条记录\nSELECT * FROM data LIMIT 10;\n\n-- 跳过前 20 条，取接下来的 10 条（第 3 页）\nSELECT * FROM data LIMIT 10 OFFSET 20;",
 
+      g7_h3: '7. 嵌套字段：点语法（深层取值）',
+      g7_p1: '真实业务数据里，值经常藏在嵌套对象中——比如每条记录都带一个 <code>tool</code> 对象，里面有 <code>id</code>、<code>title</code>、<code>code</code>。不需要手动拍平：在 SELECT、WHERE、ORDER BY 任何接受字段名的地方，都可以直接用点语法（<code>tool.id</code>）引用嵌套字段。',
+      g7_p2: '使用 <code>SELECT *</code> 时，嵌套对象字段会自动平铺成子列（<code>tool.id</code>、<code>tool.title</code>…），不会再出现看不懂的 <code>{3个键}</code>。',
+      g7_pre: "-- 嵌套对象：{ \"tool\": { \"id\": \"19\", \"title\": \"关键词概览\", \"code\": \"keyword-overview\" } }\n\n-- 用点语法提取嵌套字段\nSELECT type, tool.id, tool.title FROM data;\n\n-- 对嵌套字段进行条件过滤\nSELECT * FROM data WHERE tool.code = 'keyword-overview';",
+
       h2c: '二、 如何将 JSON 导出为 Excel 或 CSV？',
       h2c_p: 'JSON 嵌套复杂的结构往往让人头疼，而将其扁平化并导出为表格，是进行数据分析最直接的方式。本工具提供了一套完整的“JSON 转 Excel”流水线：',
 
@@ -289,11 +301,13 @@
       faq1_q: 'Q: 我的 JSON 文件有几十 MB，这个工具能打开吗？会卡死吗？',
       faq1_a: 'A: 不会卡死。传统的格式化工具会尝试一次性渲染所有 DOM 节点，导致浏览器内存溢出崩溃。本工具只渲染你当前视野内和已展开的节点，所以打开超大文件依然十分流畅。',
       faq2_q: 'Q: SQL 查询支持 JOIN 或 GROUP BY 聚合函数吗？',
-      faq2_a: 'A: 目前内置的引擎为了保证极速的纯前端体验，专注于单表的核心查询功能（SELECT, WHERE, ORDER BY, LIMIT）。暂不支持多表 JOIN 和 SUM/COUNT 等聚合操作。你可以将查询结果导出后，在 Excel 中进行聚合计算。',
+      faq2_a: 'A: 目前内置的引擎为了保证极速的纯前端体验，专注于单表的核心查询功能（SELECT 含点语法嵌套字段、WHERE、ORDER BY、LIMIT）。暂不支持多表 JOIN 和 SUM/COUNT 等聚合操作。你可以将查询结果导出后，在 Excel 中进行聚合计算。',
       faq3_q: 'Q: 我的 JSON 数据包含公司机密或用户隐私，安全吗？',
       faq3_a: 'A: 绝对安全。本工具纯前端运行，没有后端服务器，所有解析、查询、导出均在你的浏览器（JavaScript 引擎）本地完成。你甚至可以按 F12 打开网络面板，或者断开网络连接使用，没有任何数据会被发送出去。',
       faq4_q: 'Q: 如果 JSON 格式有语法错误无法解析怎么办？',
       faq4_a: 'A: 在导入时工具会明确提示语法错误的具体位置（如第几行第几列缺少逗号）。如果你已经加载了数据，可以点击左侧的「📝 编辑 JSON」，在弹出的代码框中进行修改，修改完毕后点击应用即可重新解析。',
+      faq5_q: 'Q: 我的字段是嵌套对象（比如 tool.id），能查询到深层数据吗？',
+      faq5_a: "A: 可以。点语法在 SELECT、WHERE、ORDER BY 中均可使用，例如 SELECT tool.id, tool.title FROM data WHERE tool.code = 'keyword-overview'。使用 SELECT * 时，对象字段会自动平铺成子列，嵌套数据会以可读的列展示，而不是 {N个键}。",
 
       footer_text: 'JSON on SQL © 2024 - 由开源社区驱动 | 纯前端技术栈',
 

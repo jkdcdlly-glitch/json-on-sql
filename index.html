@@ -96,6 +96,17 @@ SELECT * FROM data LIMIT 10;
 -- skip 20, take the next 10 (page 3)
 SELECT * FROM data LIMIT 10 OFFSET 20;</code></pre>
 
+        <h3 data-i18n="g7_h3">1.7 Nested fields: dot notation</h3>
+        <p data-i18n="g7_p1">Real-world JSON often nests values inside objects — e.g. every record carries a <code>tool</code> object holding <code>id</code>, <code>title</code> and <code>code</code>. No manual flattening needed: use dot notation (<code>tool.id</code>) anywhere a field name is accepted — SELECT, WHERE and ORDER BY.</p>
+        <p data-i18n="g7_p2">With <code>SELECT *</code>, nested object fields are automatically flattened into sub-columns (<code>tool.id</code>, <code>tool.title</code>…), so you never see an unreadable <code>{3 keys}</code> cell.</p>
+        <pre><code data-i18n="g7_pre">-- nested object: { "tool": { "id": "19", "title": "Overview", "code": "keyword-overview" } }
+
+-- pick nested fields with dot notation
+SELECT type, tool.id, tool.title FROM data;
+
+-- filter on a nested field
+SELECT * FROM data WHERE tool.code = 'keyword-overview';</code></pre>
+
         <h2 data-i18n="h2c">2. Exporting JSON to Excel or CSV</h2>
         <p data-i18n="h2c_p">Deeply nested JSON is painful to read. Flattening it into a table is the most direct way to analyze it. This tool ships a complete "JSON to Excel" pipeline:</p>
 
@@ -135,7 +146,7 @@ SELECT * FROM data LIMIT 10 OFFSET 20;</code></pre>
           </div>
           <div class="faq-item">
             <strong data-i18n="faq2_q">Does the SQL engine support JOIN or GROUP BY aggregates?</strong>
-            <p data-i18n="faq2_a">Not yet. To keep the engine lightning-fast and purely client-side, it focuses on core single-table queries (SELECT, WHERE, ORDER BY, LIMIT). Multi-table JOIN and SUM/COUNT aggregates are not supported yet — export the query result and aggregate in Excel.</p>
+            <p data-i18n="faq2_a">Not yet. To keep the engine lightning-fast and purely client-side, it focuses on core single-table queries (SELECT — including nested fields via dot notation, WHERE, ORDER BY, LIMIT). Multi-table JOIN and SUM/COUNT aggregates are not supported yet — export the query result and aggregate in Excel.</p>
           </div>
           <div class="faq-item">
             <strong data-i18n="faq3_q">My JSON contains company secrets or user privacy. Is it safe?</strong>
@@ -144,6 +155,10 @@ SELECT * FROM data LIMIT 10 OFFSET 20;</code></pre>
           <div class="faq-item">
             <strong data-i18n="faq4_q">My JSON has a syntax error and refuses to parse. What now?</strong>
             <p data-i18n="faq4_a">On import, the tool reports the exact location of the syntax error (line, column, missing comma, etc.). If data is already loaded, click "📝 Edit JSON" on the left, fix the text in the dialog, and hit apply to re-parse.</p>
+          </div>
+          <div class="faq-item">
+            <strong data-i18n="faq5_q">My fields are nested objects (e.g. tool.id). Can I query deep values?</strong>
+            <p data-i18n="faq5_a">Yes. Dot notation works in SELECT, WHERE and ORDER BY — e.g. SELECT tool.id, tool.title FROM data WHERE tool.code = 'keyword-overview'. With SELECT *, object fields are automatically flattened into sub-columns, so nested data shows up as readable columns instead of {N keys}.</p>
           </div>
         </div>
 
