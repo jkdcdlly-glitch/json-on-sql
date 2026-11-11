@@ -1,6 +1,6 @@
 /* ========== 迷你 SQL 引擎 ==========
- * 支持：SELECT 字段列表 / *、WHERE（= != <> > < >= <= LIKE AND OR）、
- *       ORDER BY、LIMIT n [OFFSET m]
+ * 支持：SELECT 字段列表 / *、嵌套字段点语法（如 tool.id）、
+ *       WHERE（= != <> > < >= <= LIKE AND OR）、ORDER BY、LIMIT n [OFFSET m]
  * 全局暴露：
  *   parseSQL(sql)              → AST
  *   executeSQL(sql, rows)      → { columns, rows, totalMatched, ... }
@@ -12,6 +12,39 @@
 
 (function() {
   'use strict';
+
+  // ========== 嵌套字段取值（点语法） ==========
+  // getValueByField({tool: {id: '19'}}, 'tool.id') → '19'
+  // 中间层级为 null/undefined 或非对象时安全返回 undefined
+  function getValueByField(obj, fieldPath) {
+    if (obj === null || typeof obj !== 'object') return undefined;
+    if (fieldPath === undefined || fieldPath === null || fieldPath === '') return undefined;
+    let cur = obj;
+    const parts = String(fieldPath).split('.');
+    for (const part of parts) {
+      if (cur === null || typeof cur !== 'object') return undefined;
+      cur = cur[part];
+      if (cur === undefined) return undefined;
+    }
+    return cur;
+  }
+
+  // SELECT * 平铺：把对象字段展开成 tool.id / tool.title 形式的列名
+  // depth 限制递归层数，数组不展开，空对象保留原列
+  const FLATTEN_MAX_DEPTH = 3;
+  function flattenObjectKeys(obj, prefix, depth, out) {
+    if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return;
+    for (const k of Object.keys(obj)) {
+      const v = obj[k];
+      const name = prefix ? prefix + '.' + k : k;
+      if (v !== null && typeof v === 'object' && !Array.isArray(v) &&
+          depth < FLATTEN_MAX_DEPTH && Object.keys(v).length > 0) {
+        flattenObjectKeys(v, name, depth + 1, out);
+      } else {
+        out.push(name);
+      }
+    }
+  }
 
   // ========== 值解析 ==========
   function parseValue(s) {
@@ -131,7 +164,7 @@
     let orderBy = null;
     if (orderByPart) {
       orderBy = orderByPart.split(',').map(s => {
-        const mm = s.trim().match(/^["']?(\w+)["']?(\s+(ASC|DESC))?$/i);
+        const mm = s.trim().match(/^["']?([\w\u4e00-\u9fa5.]+)["']?(\s+(ASC|DESC))?$/i);
         if (!mm) throw new Error(window.i18n ? window.i18n.t('se_order', { s }) : '无法解析 ORDER BY: ' + s);
         return { field: mm[1], desc: (mm[3] || 'ASC').toUpperCase() === 'DESC' };
       });
@@ -145,7 +178,7 @@
     if (cond.type === 'and') return cond.children.every(c => evalCondition(c, row));
     if (cond.type === 'or') return cond.children.some(c => evalCondition(c, row));
     if (cond.type === 'cond') {
-      const cell = row[cond.field];
+      const cell = getValueByField(row, cond.field);
       const val = cond.value;
       switch (cond.op) {
         case '=': return cell === val || String(cell) === String(val);
@@ -179,7 +212,7 @@
     if (parsed.orderBy && parsed.orderBy.length > 0) {
       filtered = filtered.slice().sort((a, b) => {
         for (const { field, desc } of parsed.orderBy) {
-          const va = a[field], vb = b[field];
+          const va = getValueByField(a, field), vb = getValueByField(b, field);
           if (va === vb) continue;
           if (va === undefined || va === null) return desc ? 1 : -1;
           if (vb === undefined || vb === null) return desc ? -1 : 1;
@@ -209,7 +242,26 @@
     let columns = [];
     const isStar = parsed.selectItems.some(it => it.type === 'star');
     if (isStar) {
-      columns = allKeysArr.map(k => ({ name: k, alias: k }));
+      const cols = [];
+      for (const k of allKeysArr) {
+        // 若该字段在数据中出现过「纯对象」值，则平铺为 tool.id / tool.title 等子列
+        let flattened = false;
+        const subKeys = [];
+        for (const r of dataSource) {
+          if (!r || typeof r !== 'object') continue;
+          const v = r[k];
+          if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+            flattenObjectKeys(v, k, 1, subKeys);
+            if (subKeys.length > 0) { flattened = true; break; }
+          }
+        }
+        if (flattened) {
+          subKeys.forEach(name => cols.push({ name, alias: name }));
+        } else {
+          cols.push({ name: k, alias: k });
+        }
+      }
+      columns = cols;
     } else {
       columns = parsed.selectItems
         .filter(it => it.type === 'field')
@@ -219,7 +271,7 @@
     const outRows = filtered.map(row =>
       columns.map(c => {
         if (!row || typeof row !== 'object') return undefined;
-        return row[c.name];
+        return getValueByField(row, c.name);
       })
     );
 

@@ -24,7 +24,7 @@ English | [简体中文](README.md)
 No Node.js or build tools required.
 
 ```bash
-git clone https://github.com/jkdcjlly-glitch/json-on-sql.git
+git clone https://github.com/jkdcdlly-glitch/json-on-sql.git
 cd json-on-sql
 ```
 

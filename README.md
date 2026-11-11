@@ -24,7 +24,7 @@
 无需安装 Node.js 或任何构建工具，直接克隆即可运行：
 
 ```bash
-git clone https://github.com/jkdcjlly-glitch/json-on-sql.git
+git clone https://github.com/jkdcdlly-glitch/json-on-sql.git
 cd json-on-sql
 ```
 

@@ -10,12 +10,12 @@
 
   const STR = {
     en: {
-      title: 'JSON Analyzer — Open Huge JSON Files, Query with SQL, Export Tables | 100% Local & Free',
-      meta_desc: 'A hardcore client-side JSON analyzer built for developers. Open 100MB+ files instantly, query JSON with SQL, convert JSON to tables, translate obscure field names with AI, and export CSV/TSV in one click. 100% local processing — your data never leaves the browser.',
-      meta_kw: 'JSON analyzer, JSON viewer, JSON formatter, JSON to CSV, JSON to table, JSON SQL query, large JSON files, online JSON tool, developer tools',
+      title: 'JSON on SQL - JSON to Table Converter, Viewer & SQL Query Tool',
+      meta_desc: 'Convert JSON to Table (CSV/Excel) or query JSON with native SQL. 100% free online JSON viewer that handles large files instantly without crashing. Data stays local.',
+      meta_kw: 'json to table, json to table converter, json to csv, json to excel, json viewer, json formatter, json sql query, JSON on SQL, large JSON files, online json tool',
 
-      hero_h1: 'Lightning-Fast JSON Analyzer',
-      hero_sub: 'Open 100MB files in seconds · Query with SQL · Export to tables in one click',
+      hero_h1: 'Fast JSON Viewer &amp; JSON to Table Converter',
+      hero_sub: 'Parse 100MB files in seconds · Convert JSON to tables &amp; export · Native SQL queries · 100% local &amp; private',
       badge_big: '⚡ Handles huge files',
       badge_sql: '🔍 Built-in SQL queries',
       badge_table: '📊 Table view & export',
@@ -100,7 +100,7 @@
       faq4_q: 'My JSON has a syntax error and refuses to parse. What now?',
       faq4_a: 'On import, the tool reports the exact location of the syntax error (line, column, missing comma, etc.). If data is already loaded, click "📝 Edit JSON" on the left, fix the text in the dialog, and hit apply to re-parse.',
 
-      footer_text: 'JSON Analyzer © 2024 — driven by the open-source community | 100% client-side',
+      footer_text: 'JSON on SQL © 2024 — driven by the open-source community | 100% client-side',
 
       loader_text: 'Parsing JSON...',
 
@@ -205,12 +205,12 @@
     },
 
     zh: {
-      title: '极速 JSON 分析工具 - 大文件解析、SQL 查询、表格导出 | 免费在线',
-      meta_desc: '一款专为开发者打造的纯前端 JSON 分析利器。支持百兆大文件秒开、原生 SQL 查询、JSON 转表格、字段 AI 中英翻译、一键导出 CSV/TSV。数据 100% 本地处理，绝对安全隐私。',
-      meta_kw: 'JSON, JSON分析, JSON查看, JSON格式化, JSON转表格, JSON SQL查询, JSON转CSV, 大文件JSON查看, JSON翻译, 在线工具',
+      title: 'JSON on SQL - JSON 转表格转换器、JSON 查看器 & SQL 查询工具 | 免费在线',
+      meta_desc: 'JSON 一键转表格（CSV/Excel），或用原生 SQL 查询 JSON。100% 免费在线 JSON 查看器，超大文件秒开不卡死，数据全程留在本地浏览器。',
+      meta_kw: 'json转表格, json转csv, json转excel, json查看器, json格式化, json sql查询, 大文件json, 在线json工具',
 
-      hero_h1: '极速 JSON 分析利器',
-      hero_sub: '秒开百兆大文件 · 原生 SQL 查询 · 一键转表格导出',
+      hero_h1: '极速 JSON 查看器 &amp; JSON 转表格工具',
+      hero_sub: '极速解析百兆文件 · 可视化转表格导出 · 原生 SQL 查询 · 100% 本地安全',
       badge_big: '⚡ 支持超大文件',
       badge_sql: '🔍 内置 SQL 查询',
       badge_table: '📊 表格视图与下载',
@@ -295,7 +295,7 @@
       faq4_q: 'Q: 如果 JSON 格式有语法错误无法解析怎么办？',
       faq4_a: 'A: 在导入时工具会明确提示语法错误的具体位置（如第几行第几列缺少逗号）。如果你已经加载了数据，可以点击左侧的「📝 编辑 JSON」，在弹出的代码框中进行修改，修改完毕后点击应用即可重新解析。',
 
-      footer_text: 'JSON Analyzer © 2024 - 由开源社区驱动 | 纯前端技术栈',
+      footer_text: 'JSON on SQL © 2024 - 由开源社区驱动 | 纯前端技术栈',
 
       loader_text: '正在解析 JSON...',
 
