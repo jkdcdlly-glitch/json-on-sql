@@ -403,7 +403,7 @@
     keys.forEach(k => {
       const v = obj[k];
       const vt = typeOf(v);
-      const tr = document.createElement('tr');
+      const trEl = document.createElement('tr');
       const td1 = document.createElement('td');
       td1.textContent = k;
       const cn = makeCNLabel(k, 'cn-label');
@@ -418,9 +418,9 @@
       } else {
         td2.textContent = vt === 'string' ? v : JSON.stringify(v);
       }
-      tr.appendChild(td1);
-      tr.appendChild(td2);
-      table.appendChild(tr);
+      trEl.appendChild(td1);
+      trEl.appendChild(td2);
+      table.appendChild(trEl);
     });
     container.appendChild(table);
   }
@@ -658,11 +658,11 @@
       const frag = document.createDocumentFragment();
       for (let i = start; i < end; i++) {
         const obj = arr[i];
-        const tr = document.createElement('tr');
+        const trEl = document.createElement('tr');
         const idxTd = document.createElement('td');
         idxTd.className = 'row-idx';
         idxTd.textContent = i;
-        tr.appendChild(idxTd);
+        trEl.appendChild(idxTd);
         currentKeys.forEach(k => {
           const td = document.createElement('td');
           const v = getCellValue(obj, k);
@@ -688,9 +688,9 @@
               td.addEventListener('click', () => navigateTo(path.concat(i, k), { keepContent: true }));
             }
           }
-          tr.appendChild(td);
+          trEl.appendChild(td);
         });
-        frag.appendChild(tr);
+        frag.appendChild(trEl);
       }
       tbody.appendChild(frag);
       table.appendChild(tbody);
@@ -728,7 +728,7 @@
 
     const tbody = document.createElement('tbody');
     arr.forEach((v, i) => {
-      const tr = document.createElement('tr');
+      const trEl = document.createElement('tr');
       const td1 = document.createElement('td');
       td1.className = 'row-idx';
       td1.textContent = i;
@@ -750,9 +750,9 @@
         td2.title = tr('locate_tip');
         td2.addEventListener('click', () => navigateTo(path.concat(i), { keepContent: true }));
       }
-      tr.appendChild(td1);
-      tr.appendChild(td2);
-      tbody.appendChild(tr);
+      trEl.appendChild(td1);
+      trEl.appendChild(td2);
+      tbody.appendChild(trEl);
     });
     table.appendChild(tbody);
     wrapper.appendChild(table);
@@ -1013,12 +1013,12 @@
 
     const tbody = document.createElement('tbody');
     result.rows.forEach((row, i) => {
-      const tr = document.createElement('tr');
+      const trEl = document.createElement('tr');
       const idxTd = document.createElement('td');
       idxTd.className = 'row-idx';
       idxTd.textContent = i;
       idxTd.style.cursor = 'default';
-      tr.appendChild(idxTd);
+      trEl.appendChild(idxTd);
       row.forEach(v => {
         const td = document.createElement('td');
         td.style.cursor = 'default';
@@ -1038,9 +1038,9 @@
             if (vt === 'string') td.title = v;
           }
         }
-        tr.appendChild(td);
+        trEl.appendChild(td);
       });
-      tbody.appendChild(tr);
+      tbody.appendChild(trEl);
     });
     table.appendChild(tbody);
     wrapper.appendChild(table);
