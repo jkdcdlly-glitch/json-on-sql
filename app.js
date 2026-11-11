@@ -66,6 +66,17 @@
       : t === 'string' ? 'Aa' : t === 'number' ? '#'
       : t === 'boolean' ? 'T/F' : '∅';
   }
+  // 按列名取值：普通列直接取；带点号的列（如 tool.id）按路径逐层取深层的值
+  function getCellValue(obj, colName) {
+    if (!colName.includes('.')) return obj ? obj[colName] : undefined;
+    let cur = obj;
+    for (const part of colName.split('.')) {
+      if (cur === null || typeof cur !== 'object') return undefined;
+      cur = cur[part];
+      if (cur === undefined) return undefined;
+    }
+    return cur;
+  }
   function makeCNLabel(fieldName, className) {
     const cn = cnOf(fieldName);
     if (!cn) return null;
@@ -434,7 +445,21 @@
     const pathStr = pathToString(path);
     const keySet = new Set();
     for (const obj of arr) {
-      for (const k of Object.keys(obj)) keySet.add(k);
+      if (!obj || typeof obj !== 'object') continue;
+      for (const k of Object.keys(obj)) {
+        const v = obj[k];
+        // 嵌套纯对象：把子字段以 parent.child 形式展平进列名池（空对象保留原列）
+        if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+          const subKeys = Object.keys(v);
+          if (subKeys.length > 0) {
+            subKeys.forEach(sk => keySet.add(k + '.' + sk));
+          } else {
+            keySet.add(k);
+          }
+        } else {
+          keySet.add(k);
+        }
+      }
     }
     const allKeys = [...keySet];
 
@@ -468,7 +493,7 @@
     copyBtn.textContent = tr('copy_tsv');
     copyBtn.title = tr('copy_tsv_title');
     copyBtn.addEventListener('click', () => {
-      const rows = arr.map(obj => currentKeys.map(k => obj[k]));
+      const rows = arr.map(obj => currentKeys.map(k => getCellValue(obj, k)));
       doExport(currentKeys, rows, 'copy');
       copyBtn.textContent = tr('copied');
       setTimeout(() => { copyBtn.textContent = tr('copy_tsv'); }, 1500);
@@ -480,7 +505,7 @@
     dlCsvBtn.textContent = '⬇️ CSV';
     dlCsvBtn.title = tr('dl_csv_title');
     dlCsvBtn.addEventListener('click', () => {
-      const rows = arr.map(obj => currentKeys.map(k => obj[k]));
+      const rows = arr.map(obj => currentKeys.map(k => getCellValue(obj, k)));
       doExport(currentKeys, rows, 'csv', 'data');
     });
     tools.appendChild(dlCsvBtn);
@@ -490,7 +515,7 @@
     dlTsvBtn.textContent = '⬇️ TSV';
     dlTsvBtn.title = tr('dl_tsv_title');
     dlTsvBtn.addEventListener('click', () => {
-      const rows = arr.map(obj => currentKeys.map(k => obj[k]));
+      const rows = arr.map(obj => currentKeys.map(k => getCellValue(obj, k)));
       doExport(currentKeys, rows, 'tsv', 'data');
     });
     tools.appendChild(dlTsvBtn);
@@ -640,7 +665,7 @@
         tr.appendChild(idxTd);
         currentKeys.forEach(k => {
           const td = document.createElement('td');
-          const v = obj[k];
+          const v = getCellValue(obj, k);
           if (v === undefined) {
             td.textContent = '—';
             td.className = 'null-val';
