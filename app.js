@@ -678,14 +678,14 @@
               span.textContent = shortPreview(v);
               td.appendChild(span);
               td.title = tr('locate_tip');
-              td.addEventListener('click', () => navigateTo(path.concat(i, k), { keepContent: true }));
+              td.addEventListener('click', () => navigateTo(path.concat(i, ...String(k).split('.')), { keepContent: true }));
             } else if (vt === 'null') {
               td.textContent = 'null';
               td.className = 'null-val';
             } else {
               td.textContent = vt === 'string' ? v : JSON.stringify(v);
               td.title = (vt === 'string' ? v + '\n' : '') + tr('locate_tip');
-              td.addEventListener('click', () => navigateTo(path.concat(i, k), { keepContent: true }));
+              td.addEventListener('click', () => navigateTo(path.concat(i, ...String(k).split('.')), { keepContent: true }));
             }
           }
           trEl.appendChild(td);
@@ -979,11 +979,6 @@
     resToolbar.appendChild(resTools);
     body.appendChild(resToolbar);
 
-    const sqlPreview = document.createElement('div');
-    sqlPreview.className = 'sql-preview-box';
-    sqlPreview.textContent = originalSQL.trim();
-    body.appendChild(sqlPreview);
-
     if (result.rows.length === 0) {
       const empty = document.createElement('div');
       empty.style.cssText = 'color:#94a3b8;padding:20px 0;text-align:center;';
@@ -1027,7 +1022,8 @@
       idxTd.textContent = i;
       idxTd.style.cursor = 'default';
       trEl.appendChild(idxTd);
-      row.forEach(v => {
+      row.forEach((v, ci) => {
+        const c = result.columns[ci];
         const td = document.createElement('td');
         td.style.cursor = 'default';
         if (v === null) {
@@ -1038,12 +1034,22 @@
           td.className = 'null-val';
         } else {
           const vt = typeOf(v);
+          // 点击定位到左侧树：表路径 + 原始行下标 + 点语法拆段
+          const targetPath = (result.tablePath || []).concat(
+            result.rowSourceIndex ? result.rowSourceIndex[i] : i,
+            ...String(c.name).split('.')
+          );
+          td.style.cursor = 'pointer';
+          td.addEventListener('click', () => navigateTo(targetPath, { keepContent: true }));
           if (vt === 'object' || vt === 'array') {
-            td.textContent = shortPreview(v);
-            td.title = JSON.stringify(v).slice(0, 200);
+            const span = document.createElement('span');
+            span.className = 'cell-clickable';
+            span.textContent = shortPreview(v);
+            td.appendChild(span);
+            td.title = JSON.stringify(v).slice(0, 200) + '\n' + tr('locate_tip');
           } else {
             td.textContent = String(v);
-            if (vt === 'string') td.title = v;
+            if (vt === 'string') td.title = v + '\n' + tr('locate_tip');
           }
         }
         trEl.appendChild(td);

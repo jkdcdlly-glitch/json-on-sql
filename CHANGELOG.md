@@ -5,7 +5,17 @@
 
 ## [Unreleased]
 
-## [0.3.0] - 2026-11-13
+## [0.3.1] - 2026-11-13
+
+### Added
+- SQL 查询结果单元格可点击定位到左侧树（含 `22 keys` 对象单元格），定位使用原始行下标，WHERE/ORDER BY/LIMIT 后依然准确
+
+### Changed
+- SQL 结果面板不再重复展示 SQL 语句（上方编辑器已有），仅保留结果元信息与表格
+
+### Fixed
+- SQL 自动生成注释与提示语之间缺换行（`-- Table: items (showing 5 fields)-- Edit...`），中英文均修复（See BUG-004）
+- 表格视图点语法列（如 `metrics.organic`）点击定位路径按点拆段修正（See BUG-005）
 
 ### Fixed
 - 点击嵌套数组节点时 SQL 表名错误：`$.tasks[0].result[0].items` 曾生成 `FROM result`，导致执行结果错误；现正确生成 `FROM items`（See BUG-003, ADR-003）

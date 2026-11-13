@@ -11,6 +11,46 @@
 
 ---
 
+## BUG-005　点语法列单元格定位路径错误 / SQL 结果单元格不可点击
+
+- **日期时间**：2026-11-13 发现并修复
+- **严重级别**：中（表格视图点了会定位到不存在的节点；SQL 结果的对象单元格完全不可点）
+- **现象**：
+  ① 表格视图点语法列（如 `metrics.organic`）的 `22 keys` 点击后按字面 key `metrics.organic` 拼路径，导航到错误节点；
+  ② SQL 查询结果里的对象/数组单元格（如 `22 keys`）纯文本展示，不可点击定位，与表格视图体验不一致。
+- **根因**：
+  ① `renderRecordTable` 单元格点击用 `path.concat(i, k)`，k 含点号时被当成单段 key；
+  ② `renderSQLResult` 建单元格时从未绑定导航事件；
+  ③ 即使绑定，WHERE/ORDER BY/LIMIT 之后结果行号 ≠ 原数组下标，直接用行号定位会错位。
+- **修复**：
+  ① `renderRecordTable` 定位路径改为 `path.concat(i, ...k.split('.'))`；
+  ② `executeSQL` 返回 `rowSourceIndex`（每行对应的原数组下标，WHERE/排序/LIMIT 全程同步维护）；
+  ③ `renderSQLResult` 所有非空单元格绑定点击定位：`表路径 + rowSourceIndex[i] + 字段按点拆段`。
+- **涉及文件**：`app.js`、`sql-engine.js`
+- **防回归要点**：
+  1. SQL 结果（尤其带 WHERE + ORDER BY + LIMIT 时）点击 `22 keys` 应定位到左侧树对应节点
+  2. 构造乱序数据验证 `rowSourceIndex` 映射（node 断言：结果第 i 行字段值 === 原数据[rowSourceIndex[i]] 的字段值）
+  3. `window.SQLEngine` 返回结构新增 `rowSourceIndex` 字段（增量变更，见 ADR-003）
+
+---
+
+## BUG-004　SQL 注释与提示语之间缺换行（BUG-001 修复方向错误引入的回归）
+
+- **日期时间**：2026-11-11 引入（BUG-001 的修复）；2026-11-13 发现并修复
+- **严重级别**：低（显示问题，但 BUG-001 的根因分析就是错的，值得记教训）
+- **现象**：自动生成的 SQL 显示为 `-- Table: items (showing 5 fields)-- Edit the query, ...`，两行注释挤在一行。
+- **根因**：
+  **BUG-001 的修复方向反了。** 当时判断"zh 模板末尾多了 `\n`"并删掉，实际原始问题另有原因，
+  删掉后变成两语言都缺换行。原始正确约定本应是：`sql_tbl_comment` **以 `\n` 结尾**，`sql_run_hint` **不以 `\n` 开头**。
+- **修复**：en/zh 两个 `sql_tbl_comment` 模板末尾统一加回 `\n`。
+- **涉及文件**：`i18n.js`
+- **教训**：
+  修"显示类"小问题时也要先拼接复现真实输出再动手，而不是凭描述推断；
+  BUG-001 记录的"防回归要点"当时写反了，以本条为准。
+- **防回归要点**：拼接验证：`t('sql_tbl_comment') + t('sql_run_hint')` 输出的前两行必须是两条独立注释。
+
+---
+
 ## BUG-003　点击嵌套数组节点时，SQL 表名取错（生成 `FROM result` 而非 `FROM items`）
 
 - **日期时间**：2026-11-13 发现并修复

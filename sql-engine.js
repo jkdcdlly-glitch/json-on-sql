@@ -204,15 +204,23 @@
   function executeSQL(sql, dataSource) {
     const parsed = parseSQL(sql);
     let filtered = dataSource;
+    // 行 → 原始数组下标映射（WHERE/ORDER BY/LIMIT 后仍可定位回原数据，供前端点击跳转）
+    let rowIdx = dataSource.map((_, idx) => idx);
 
     if (parsed.whereClause) {
-      filtered = filtered.filter(row => evalCondition(parsed.whereClause, row));
+      const kept = [];
+      filtered = filtered.filter((row, idx) => {
+        if (evalCondition(parsed.whereClause, row)) { kept.push(rowIdx[idx]); return true; }
+        return false;
+      });
+      rowIdx = kept;
     }
 
     if (parsed.orderBy && parsed.orderBy.length > 0) {
-      filtered = filtered.slice().sort((a, b) => {
+      const pairs = filtered.map((row, i) => ({ row, idx: rowIdx[i] }));
+      pairs.sort((a, b) => {
         for (const { field, desc } of parsed.orderBy) {
-          const va = getValueByField(a, field), vb = getValueByField(b, field);
+          const va = getValueByField(a.row, field), vb = getValueByField(b.row, field);
           if (va === vb) continue;
           if (va === undefined || va === null) return desc ? 1 : -1;
           if (vb === undefined || vb === null) return desc ? -1 : 1;
@@ -224,12 +232,15 @@
         }
         return 0;
       });
+      filtered = pairs.map(p => p.row);
+      rowIdx = pairs.map(p => p.idx);
     }
 
     const totalMatched = filtered.length;
 
     if (parsed.limit) {
       filtered = filtered.slice(parsed.limit.offset, parsed.limit.offset + parsed.limit.limit);
+      rowIdx = rowIdx.slice(parsed.limit.offset, parsed.limit.offset + parsed.limit.limit);
     }
 
     // 收集所有键
@@ -280,6 +291,7 @@
       rows: outRows,
       totalMatched,
       tableName: parsed.tableName,
+      rowSourceIndex: rowIdx,
       parsedSQL: sql.trim()
     };
   }
