@@ -805,24 +805,32 @@
     let isSingleRecord = false;
     let recordIndex = -1;
 
-    for (let i = path.length - 1; i >= 0; i--) {
-      if (typeof path[i] === 'number') {
-        const arrPath = path.slice(0, i);
-        const lastKey = arrPath[arrPath.length - 1];
-        if (lastKey !== undefined) {
-          tableName = String(lastKey);
+    const lastSeg = path.length > 0 ? path[path.length - 1] : null;
+
+    if (typeof lastSeg === 'number') {
+      // 选中了数组内的某条记录（路径以数字结尾）：向前找所属数组名
+      for (let i = path.length - 1; i >= 0; i--) {
+        if (typeof path[i] === 'number') {
+          const arrPath = path.slice(0, i);
+          const lastKey = arrPath[arrPath.length - 1];
+          if (lastKey !== undefined && typeof lastKey === 'string') {
+            tableName = String(lastKey);
+          }
+          if (i === path.length - 1) {
+            isSingleRecord = true;
+            recordIndex = path[i];
+          }
+          break;
         }
-        if (i === path.length - 1) {
-          isSingleRecord = true;
-          recordIndex = path[i];
-        }
-        break;
       }
+    } else if (lastSeg !== null) {
+      // 选中了数组/对象节点本身：表名就是该节点自己的键名（如 items），
+      // 而不是路径中更上层的祖先数组（如 result）
+      tableName = String(lastSeg);
     }
 
     if (!tableName) {
-      const last = path.length > 0 ? path[path.length - 1] : null;
-      tableName = last !== null ? String(last) : 'root';
+      tableName = path.length === 0 ? 'root' : String(path[path.length - 1]);
     }
 
     const cn = cnOf(tableName);
