@@ -16,12 +16,25 @@
   // ========== 嵌套字段取值（点语法） ==========
   // getValueByField({tool: {id: '19'}}, 'tool.id') → '19'
   // 中间层级为 null/undefined 或非对象时安全返回 undefined
+  function parseFieldPath(fieldPath) {
+    // 'a.b[0].c' → ['a','b',0,'c']；'a[0][1]' → ['a',0,1]
+    return String(fieldPath).split('.').flatMap(seg => {
+      const m = seg.match(/^([^\x5b\x5d]*)((?:\x5b\d+\x5d)*)$/);
+      if (!m) return [seg];
+      const out = [];
+      if (m[1] !== '') out.push(m[1]);
+      for (const idx of m[2].match(/\x5b\d+\x5d/g) || []) {
+        out.push(parseInt(idx.slice(1, -1), 10));
+      }
+      return out;
+    });
+  }
+
   function getValueByField(obj, fieldPath) {
     if (obj === null || typeof obj !== 'object') return undefined;
     if (fieldPath === undefined || fieldPath === null || fieldPath === '') return undefined;
     let cur = obj;
-    const parts = String(fieldPath).split('.');
-    for (const part of parts) {
+    for (const part of parseFieldPath(fieldPath)) {
       if (cur === null || typeof cur !== 'object') return undefined;
       cur = cur[part];
       if (cur === undefined) return undefined;
@@ -110,7 +123,7 @@
       return { type: 'and', children: andParts.map(p => parseWhere(p)) };
     }
     const m = expr.match(
-      /^\s*\(?\s*["']?([\w\u4e00-\u9fa5.]+)["']?\s*(>=|<=|!=|<>|=|>|<|LIKE)\s*([\s\S]+?)\s*\)?\s*$/i
+      /^\s*[(]?\s*["']?([\w\u4e00-\u9fa5.\x5b\x5d]+)["']?\s*(>=|<=|!=|<>|=|>|<|LIKE)\s*([\s\S]+?)\s*[)]?\s*$/i
     );
     if (!m) throw new Error(window.i18n ? window.i18n.t('se_cond', { s: expr }) : '无法解析条件: ' + expr);
     const [, field, op, valuePart] = m;
@@ -135,7 +148,7 @@
         s = s.trim();
         if (s === '*') return { type: 'star' };
         const mm = s.match(
-          /^["']?([\w\u4e00-\u9fa5.]+)["']?(?:\s+AS\s+["']?([\w\u4e00-\u9fa5]+)["']?)?$/i
+          /^["']?([\w\u4e00-\u9fa5.\x5b\x5d]+)["']?(?:\s+AS\s+["']?([\w\u4e00-\u9fa5]+)["']?)?$/i
         );
         if (!mm) throw new Error(window.i18n ? window.i18n.t('se_field', { s }) : '无法解析字段: ' + s);
         return { type: 'field', name: mm[1], alias: mm[2] || mm[1] };
@@ -164,7 +177,7 @@
     let orderBy = null;
     if (orderByPart) {
       orderBy = orderByPart.split(',').map(s => {
-        const mm = s.trim().match(/^["']?([\w\u4e00-\u9fa5.]+)["']?(\s+(ASC|DESC))?$/i);
+        const mm = s.trim().match(/^["']?([\w\u4e00-\u9fa5.\x5b\x5d]+)["']?(\s+(ASC|DESC))?$/i);
         if (!mm) throw new Error(window.i18n ? window.i18n.t('se_order', { s }) : '无法解析 ORDER BY: ' + s);
         return { field: mm[1], desc: (mm[3] || 'ASC').toUpperCase() === 'DESC' };
       });

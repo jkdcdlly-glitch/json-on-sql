@@ -130,7 +130,9 @@
       run_btn: '▶ Run',
       run_title: 'Run SQL (Ctrl+Enter)',
       splitter_title: 'Drag to resize the SQL editor and table',
+      v_splitter_title: 'Drag to resize the tree and content panels',
       empty_view: '← Select a node on the left',
+      copy_node_title: 'Copy this node (with all nested data) as formatted JSON',
 
       m_h2: '📝 Edit raw JSON',
       m_cancel: 'Cancel',
@@ -332,8 +334,9 @@
       run_btn: '▶ 运行',
       run_title: '执行 SQL（Ctrl+Enter）',
       splitter_title: '上下拖动可调整 SQL 和表格的高度',
+      v_splitter_title: '左右拖动可调整结构树与内容面板的宽度',
       empty_view: '← 请从左侧选择一个节点',
-
+      copy_node_title: '复制该节点及全部嵌套数据（格式化 JSON）',
       m_h2: '📝 编辑原始 JSON',
       m_cancel: '取消',
       m_apply: '应用并重新解析 (Ctrl+Enter)',

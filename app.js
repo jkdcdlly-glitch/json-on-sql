@@ -247,6 +247,21 @@
     preview.textContent = shortPreview(data);
     row.appendChild(preview);
 
+        // 悬停显示「复制子树 JSON」按钮
+    const copyNodeBtn = document.createElement('span');
+    copyNodeBtn.className = 'node-copy-btn';
+    copyNodeBtn.textContent = '📋';
+    copyNodeBtn.title = tr('copy_node_title');
+    copyNodeBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // 不触发节点的选中/展开
+      copyToClipboard(JSON.stringify(data, null, 2)).then(() => {
+        copyNodeBtn.textContent = '✓';
+        setTimeout(() => { copyNodeBtn.textContent = '📋'; }, 1200);
+      });
+    });
+    row.appendChild(copyNodeBtn);
+
+
     const children = document.createElement('div');
     children.className = 'children';
     row._childrenEl = children;
@@ -1458,6 +1473,37 @@
         document.body.style.userSelect = '';
       }
     });
+        // 左右面板宽度拖拽（树面板 / 内容面板），宽度持久化到 localStorage
+    const vSplitter = document.getElementById('v-splitter');
+    const treePanel = document.getElementById('tree-panel');
+    const savedW = localStorage.getItem('json_tree_width');
+    if (savedW) treePanel.style.width = `${savedW}px`;
+    let isVDragging = false;
+
+    vSplitter.addEventListener('mousedown', () => {
+      isVDragging = true;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isVDragging) return;
+      const mainEl = document.getElementById('main');
+      const rect = mainEl.getBoundingClientRect();
+      let newWidth = e.clientX - rect.left;
+      newWidth = Math.max(280, Math.min(newWidth, rect.width * 0.55));
+      treePanel.style.width = `${newWidth}px`;
+      localStorage.setItem('json_tree_width', String(newWidth));
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isVDragging) {
+        isVDragging = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    });
+
   }
 
   if (document.readyState === 'loading') {

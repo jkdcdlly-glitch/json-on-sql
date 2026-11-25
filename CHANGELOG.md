@@ -5,6 +5,11 @@
 
 ## [Unreleased]
 
+### Added
+- SQL 引擎支持数组下标取值：`SELECT ad_group_ad.ad.final_urls[0] FROM data`，WHERE/ORDER BY 同样可用，越界下标安全返回 null
+- 左树节点悬停显示 📋 按钮，一键复制该节点及全部嵌套数据（格式化 JSON）
+- 左右面板宽度可拖拽调整（`#v-splitter`），自动记住上次宽度
+
 ## [0.3.1] - 2026-11-13
 
 ### Added
